@@ -306,3 +306,78 @@ public:
         logActivity("Book Borrowed", mem->getName() + " -> " + b.getTitle());
         save();
     }
+    void returnBook() {
+        cin.ignore(); string id; cout << "Enter Member ID: "; getline(cin, id);
+
+        auto mem = find_if(members.begin(), members.end(), [&](Member &m){ return m.getId()==id; });
+        if (mem==members.end()) { cout << "Member not found.\n"; return; }
+        if (memberBooks[id].empty()) { cout << "⚠ This member has no borrowed books!\n"; return; }
+
+        cout << "\nBooks borrowed by " << mem->getName() << ":\n";
+        for (size_t i=0;i<memberBooks[id].size();i++) cout << i+1 << ". " << memberBooks[id][i] << endl;
+
+        int index; cout << "Enter Book Number to Return: "; cin >> index;
+        if (index<1 || index>(int)memberBooks[id].size()) { cout << "❌ Invalid choice.\n"; return; }
+
+        string bookTitle = memberBooks[id][index-1];
+        auto bookIt = find_if(books.begin(), books.end(), [&](Book &b){ return toLower(b.getTitle())==toLower(bookTitle); });
+
+        if (bookIt!=books.end()) {
+            bookIt->returnBook();
+            mem->decreaseBorrow();
+            memberBooks[id].erase(memberBooks[id].begin()+index-1);
+            cout << "✅ " << mem->getName() << " returned \"" << bookIt->getTitle() << "\".\n";
+            logActivity("Book Returned", mem->getName() + " -> " + bookIt->getTitle());
+            save();
+        }
+    }
+
+    void displayBooks() const {
+        if (books.empty()) { cout << "No books available.\n"; return; }
+        cout << "\n📚 BOOK LIST:\n";
+        for (size_t i=0;i<books.size();i++) { cout << setw(2)<<i+1<<". "; books[i].display(); }
+    }
+
+    void displayMembers() const {
+        if (members.empty()) { cout << "No members registered.\n"; return; }
+        cout << "\n👤 MEMBER LIST:\n";
+        for (auto &m : members) m.display();
+    }
+
+    void searchBook() {
+        cin.ignore();
+        string key; cout << "Enter Book Title or ISBN: "; getline(cin, key);
+        bool found=false;
+        for (auto &b : books) if (toLower(b.getTitle())==toLower(key) || b.getIsbn()==key) { cout<<"✅ Found: "; b.display(); found=true; }
+        if (!found) cout << "❌ No match found.\n";
+    }
+};
+
+// ===============================
+// 🔹 MAIN FUNCTION
+// ===============================
+int main() {
+    Library lib; int choice;
+
+    while (true) {
+        cout << "\n========== 📘 LIBRARY MANAGEMENT SYSTEM ==========\n";
+        cout << "1. Add Book\n2. View Books\n3. Register Member\n4. View Members\n";
+        cout << "5. Borrow Book\n6. Return Book\n7. Search Book\n8. Delete Book\n9. Exit\n";
+        cout << "Enter your choice: ";
+
+        if (!(cin >> choice)) { cout << "❌ Invalid input! Enter a number.\n"; cin.clear(); cin.ignore(10000,'\n'); continue; }
+
+        switch(choice) {
+            case 1: lib.addBook(); break;
+            case 2: lib.displayBooks(); break;
+            case 3: lib.registerMember(); break;
+            case 4: lib.displayMembers(); break;
+            case 5: lib.borrowBook(); break;
+            case 6: lib.returnBook(); break;
+            case 7: lib.searchBook(); break;
+            case 8: lib.deleteBook(); break;
+            case 9: cout << "💾 Data saved successfully. Goodbye!\n"; return 0;
+            default: cout << "❌ Invalid choice.\n";
+        }
+    }
+}
