@@ -1,1 +1,117 @@
 # library-management-system
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <vector>
+#include <iomanip>
+#include <algorithm>
+#include <ctime>
+#include <cctype>
+#include <map>
+#include <filesystem>
+using namespace std;
+namespace fs = filesystem;
+
+// ===============================
+// 🔹 Utility Functions
+// ===============================
+bool isAlphabetic(const string &str) {
+    if (str.empty()) return false;
+    for (char c : str)
+        if (!isalpha(c) && !isspace(c))
+            return false;
+    return true;
+}
+
+bool isAlphaNumeric(const string &str) {
+    if (str.empty()) return false;
+    for (char c : str)
+        if (!isalnum(c))
+            return false;
+    return true;
+}
+
+string toLower(string s) {
+    transform(s.begin(), s.end(), s.begin(), ::tolower);
+    return s;
+}
+
+string currentTime() {
+    time_t now = time(0);
+    string t = ctime(&now);
+    t.pop_back();
+    return t;
+}
+
+void ensureFilesExist() {
+    vector<string> files = {"books.txt", "members.txt", "history.txt"};
+    for (auto &f : files) {
+        if (!fs::exists(f)) {
+            ofstream create(f);
+            create.close();
+        }
+    }
+}
+
+// ===============================
+// 🔹 Abstract Classes
+// ===============================
+class Displayable {
+public:
+    virtual void display() const = 0;
+    virtual ~Displayable() {}
+};
+
+class FileHandler {
+public:
+    virtual void save() = 0;
+    virtual void load() = 0;
+    virtual ~FileHandler() {}
+};
+
+// ===============================
+// 🔹 Person Class
+// ===============================
+class Person {
+protected:
+    string name;
+public:
+    Person() {}
+    Person(string n) : name(n) {}
+    string getName() const { return name; }
+    void setName(string n) { name = n; }
+};
+
+// ===============================
+// 🔹 Member Class
+// ===============================
+class Member : public Person, public Displayable {
+private:
+    string id;
+    int borrowedCount;
+public:
+    Member() : borrowedCount(0) {}
+    Member(string n, string i) : Person(n), id(i), borrowedCount(0) {}
+
+    string getId() const { return id; }
+    int getBorrowedCount() const { return borrowedCount; }
+    void increaseBorrow() { borrowedCount++; }
+    void decreaseBorrow() { if (borrowedCount > 0) borrowedCount--; }
+
+    void display() const override {
+        cout << "ID: " << id << " | Name: " << name
+             << " | Borrowed Books: " << borrowedCount << endl;
+    }
+
+    string toFileString() const {
+        return id + "|" + name + "|" + to_string(borrowedCount) + "\n";
+    }
+
+    void fromFileString(const string &line) {
+        size_t p1 = line.find('|');
+        size_t p2 = line.find('|', p1 + 1);
+        id = line.substr(0, p1);
+        name = line.substr(p1 + 1, p2 - p1 - 1);
+        borrowedCount = stoi(line.substr(p2 + 1));
+    }
+};
