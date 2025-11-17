@@ -375,7 +375,7 @@ int main() {
             case 5: lib.borrowBook(); break;
             case 6: lib.returnBook(); break;
             case 7: lib.searchBook(); break;
-            case 8: lib.deleteBook(); break;
+    
             case 9: cout << "💾 Data saved successfully. Goodbye!\n"; return 0;
             default: cout << "❌ Invalid choice.\n";
         }
