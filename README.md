@@ -214,3 +214,95 @@ public:
         while (getline(mf, line)) if (!line.empty()) { Member m; m.fromFileString(line); members.push_back(m); }
         mf.close();
     }
+    // ===============================
+    // ADD BOOK WITHOUT EXCEPTION
+    // ===============================
+    void addBook() {
+        cin.ignore();
+        string title, author, isbn;
+        int copies;
+
+        cout << "Enter Book Title (alphabets/numbers allowed): "; getline(cin, title);
+        if (title.empty()) { cout << "❌ Title cannot be empty!\n"; return; }
+
+        cout << "Enter Author Name (alphabets only): "; getline(cin, author);
+        if (!isAlphabetic(author)) { cout << "❌ Author must contain alphabets only!\n"; return; }
+
+        cout << "Enter ISBN (alphanumeric allowed): "; getline(cin, isbn);
+        if (!isAlphaNumeric(isbn)) { cout << "❌ ISBN must be alphanumeric!\n"; return; }
+
+        for (auto &b : books) {
+            if (toLower(b.getIsbn()) == toLower(isbn)) {
+                cout << "❌ ISBN already exists!\n";
+                return;
+            }
+        }
+
+        cout << "Enter number of copies: ";
+        while (!(cin >> copies) || copies <= 0) { 
+            cout << "❌ Invalid number! Enter again: "; 
+            cin.clear(); cin.ignore(10000,'\n'); 
+        }
+
+        books.push_back(Book(title, author, isbn, copies));
+        cout << "✅ Book added successfully!\n";
+        logActivity("Book Added", title);
+        save();
+    }
+
+    void deleteBook() {
+        if (books.empty()) { cout << "No books to delete.\n"; return; }
+        displayBooks();
+        int index;
+        cout << "Enter Book Number to Delete: "; cin >> index;
+        if (index < 1 || index > (int)books.size()) { cout << "❌ Invalid choice.\n"; return; }
+
+        string deletedTitle = books[index-1].getTitle();
+        books.erase(books.begin()+index-1);
+        cout << "✅ Book \"" << deletedTitle << "\" deleted successfully!\n";
+        logActivity("Book Deleted", deletedTitle);
+        save();
+    }
+
+    void registerMember() {
+        cin.ignore();
+        string name, id;
+        cout << "Enter Member Name (alphabets only): "; getline(cin, name);
+        if (!isAlphabetic(name)) { cout << "❌ Invalid member name!\n"; return; }
+
+        cout << "Enter Member ID (alphanumeric allowed): "; getline(cin, id);
+        if (!isAlphaNumeric(id)) { cout << "❌ Member ID must be alphanumeric!\n"; return; }
+
+        for (auto &m : members) {
+            if (toLower(m.getId()) == toLower(id)) {
+                cout << "❌ Member ID already exists!\n"; 
+                return;
+            }
+        }
+
+        members.push_back(Member(name, id));
+        cout << "✅ Member registered successfully!\n";
+        logActivity("Member Registered", name);
+        save();
+    }
+
+    void borrowBook() {
+        if (books.empty() || members.empty()) { cout << "No books or members available.\n"; return; }
+        cin.ignore();
+        string id; cout << "Enter Member ID: "; getline(cin, id);
+
+        auto mem = find_if(members.begin(), members.end(), [&](Member &m){ return m.getId()==id; });
+        if (mem==members.end()) { cout << "Member not found.\n"; return; }
+
+        displayBooks();
+        int index; cout << "Enter Book Number to Borrow: "; cin >> index;
+        if (index<1 || index>(int)books.size()) { cout << "Invalid book selection.\n"; return; }
+
+        Book &b = books[index-1];
+        if (!b.isAvailable()) { cout << "Book not available.\n"; return; }
+
+        b.borrowBook(); mem->increaseBorrow(); memberBooks[mem->getId()].push_back(b.getTitle());
+        cout << "✅ " << mem->getName() << " borrowed \"" << b.getTitle() << "\".\n";
+        logActivity("Book Borrowed", mem->getName() + " -> " + b.getTitle());
+        save();
+    }
